@@ -1,0 +1,307 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ---------------------------------------------------------------------------
+   Cocoya design tokens
+   Espresso blacks, roasted browns, caramel + muted gold, cream and foam.
+   A single cool "frost" accent is reserved for the cold-coffee chapter.
+--------------------------------------------------------------------------- */
+@theme {
+  --color-espresso: #0d0806;
+  --color-roast: #17100b;
+  --color-mocha: #241811;
+  --color-cocoa: #3d2a1f;
+  --color-coffee: #6b4a35;
+  --color-caramel: #b98250;
+  /* AA-contrast caramel for small text on cream/foam */
+  --color-caramel-deep: #8a5526;
+  --color-gold: #d6b27a;
+  --color-latte: #cdb393;
+  --color-sand: #e5d6c1;
+  --color-cream: #f2e9dc;
+  --color-foam: #faf5ee;
+  --color-frost: #a8c3cc;
+  --color-ice: #dbe8ec;
+  --color-glacier: #0a1013;
+  --color-veg: #1f8a3b;
+  --color-nonveg: #b3261e;
+  --color-egg: #c98a12;
+
+  --ease-cinematic: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-silk: cubic-bezier(0.65, 0, 0.35, 1);
+
+  --text-display: clamp(3rem, 1.6rem + 6.2vw, 8.25rem);
+  --text-display--line-height: 0.92;
+  --text-headline: clamp(2.25rem, 1.4rem + 3.6vw, 5rem);
+  --text-headline--line-height: 1;
+  --text-title: clamp(1.6rem, 1.2rem + 1.6vw, 2.6rem);
+  --text-title--line-height: 1.08;
+
+  --animate-marquee: marquee 38s linear infinite;
+  --animate-scroll-dot: scroll-dot 2.2s cubic-bezier(0.65,0,0.35,1) infinite;
+  --animate-steam: steam 3.2s ease-in-out infinite;
+  --animate-rise: rise 1.2s var(--ease-cinematic) both;
+  --animate-fade-up: fade-up 1s var(--ease-cinematic) both;
+  --animate-fade-right: fade-right 0.9s var(--ease-cinematic) both;
+
+  @keyframes marquee {
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(-50%, 0, 0); }
+  }
+  @keyframes scroll-dot {
+    0% { transform: translateY(-100%); opacity: 0; }
+    30% { opacity: 1; }
+    100% { transform: translateY(220%); opacity: 0; }
+  }
+  @keyframes settle {
+    from { transform: scale(1.14); }
+    to { transform: scale(1); }
+  }
+  @keyframes curtain-up {
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(0, -101%, 0); }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes rise-in {
+    from { opacity: 0; transform: translate3d(0, 60px, 0) scale(0.94); }
+    to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+  }
+  @keyframes pop-in {
+    from { opacity: 0; transform: scale(0.6) rotate(-20deg); }
+    to { opacity: 1; transform: scale(1) rotate(0deg); }
+  }
+  @keyframes rise {
+    from { transform: translate3d(0, 108%, 0); }
+    to { transform: translate3d(0, 0, 0); }
+  }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translate3d(0, 18px, 0); }
+    to { opacity: 1; transform: translate3d(0, 0, 0); }
+  }
+  @keyframes fade-right {
+    from { opacity: 0; transform: translate3d(-16px, 0, 0); }
+    to { opacity: 1; transform: translate3d(0, 0, 0); }
+  }
+  @keyframes steam {
+    0% { transform: translateY(6px) scaleY(0.9); opacity: 0; }
+    40% { opacity: 0.7; }
+    100% { transform: translateY(-14px) scaleY(1.1); opacity: 0; }
+  }
+}
+
+@theme inline {
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
+  --font-heading: var(--font-fraunces), ui-serif, Georgia, serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* Light (cream) surface — default */
+:root {
+  --radius: 0.875rem;
+  --background: #faf5ee;
+  --foreground: #1a110c;
+  --card: #fffdf9;
+  --card-foreground: #1a110c;
+  --popover: #fffdf9;
+  --popover-foreground: #1a110c;
+  --primary: #1a110c;
+  --primary-foreground: #faf5ee;
+  --secondary: #efe4d4;
+  --secondary-foreground: #2a1c14;
+  --muted: #efe6da;
+  --muted-foreground: #6e5a4b;
+  --accent: #ead9c0;
+  --accent-foreground: #2a1c14;
+  --destructive: #b3261e;
+  --border: #e2d3bf;
+  --input: #d9c7b0;
+  --ring: #b98250;
+}
+
+/* Dark (espresso) surface — used by dark chapters and the admin */
+.dark {
+  --background: #0d0806;
+  --foreground: #f2e9dc;
+  --card: #1a120d;
+  --card-foreground: #f2e9dc;
+  --popover: #1d140e;
+  --popover-foreground: #f2e9dc;
+  --primary: #e9c999;
+  --primary-foreground: #160e09;
+  --secondary: #2a1d15;
+  --secondary-foreground: #f2e9dc;
+  --muted: #241911;
+  --muted-foreground: #b8a48f;
+  --accent: #33241a;
+  --accent-foreground: #f2e9dc;
+  --destructive: #f2867e;
+  --border: rgb(242 233 220 / 0.12);
+  --input: rgb(242 233 220 / 0.18);
+  --ring: #d6b27a;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    scroll-padding-top: 5rem;
+  }
+
+  html:not(.lenis) {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-espresso text-foreground font-sans antialiased;
+    overflow-x: clip;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--color-caramel) 55%, transparent);
+    color: var(--color-foam);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 3px;
+  }
+
+  img {
+    -webkit-user-drag: none;
+  }
+}
+
+/* Custom cursor (fine pointers only — see components/magic/cursor.tsx) */
+html.has-magic-cursor,
+html.has-magic-cursor * {
+  cursor: none !important;
+}
+html.has-magic-cursor :is(input, textarea, select, [contenteditable]) {
+  cursor: auto !important;
+}
+
+/* Lenis smooth scroll */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis:not(.lenis-autoToggle).lenis-stopped {
+  overflow: clip;
+}
+.lenis [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+@layer components {
+  /* Thin uppercase label used across chapters */
+  .eyebrow {
+    @apply inline-flex items-center gap-3 font-sans text-[0.7rem] font-semibold tracking-[0.32em] uppercase;
+  }
+  .eyebrow::before {
+    content: "";
+    @apply block h-px w-8 bg-current opacity-60;
+  }
+
+  .font-display-wonk {
+    font-style: italic;
+  }
+
+  /* Film grain to give photography a printed, cinematic finish */
+  .grain::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 160px 160px;
+  }
+
+  /* Intro curtain failsafe: if JavaScript is slow or blocked, the curtain
+     still lifts on its own so content is never trapped behind it. */
+  .preloader-failsafe {
+    animation: preloader-out 0.8s cubic-bezier(0.65,0,0.35,1) 4s forwards;
+  }
+
+  /* The intro curtain only exists when the pre-paint script flagged it (first
+     desktop visit per session) — no flash on repeat visits or phones. */
+  html:not([data-intro="pending"]) .preloader-failsafe {
+    display: none !important;
+  }
+
+  /* Hero entrance waits (paused) behind the curtain, then plays as it lifts. */
+  html[data-intro="pending"] [data-hero-anim] {
+    animation-play-state: paused !important;
+  }
+  @keyframes preloader-out {
+    to { clip-path: inset(0 0 100% 0); visibility: hidden; }
+  }
+
+  /* Skip style/layout/paint for long off-screen sections until they near the
+     viewport. The intrinsic size is a remembered estimate (auto) to keep the
+     scrollbar stable. */
+  .cv-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: auto var(--cv-size, 1600px);
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mask-fade-x {
+    mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
