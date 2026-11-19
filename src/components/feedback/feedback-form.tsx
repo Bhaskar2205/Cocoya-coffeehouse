@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { AlertCircle, ArrowUpRight, Check, ChevronDown, Loader2, RotateCcw } from "lucide-react";
+import { AlertCircle, ArrowUpRight, Check, ChevronDown, Copy, Loader2, RotateCcw } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,7 +16,7 @@ import {
   flattenErrors,
   type FieldErrors,
 } from "@/lib/feedback/schema";
-import { site } from "@/content/site";
+import { googleReviewUrl, site } from "@/content/site";
 import { cn } from "@/lib/utils";
 
 type Values = {
@@ -60,6 +60,33 @@ const toPayload = (v: Values) => ({
   recommendation: v.recommendation || undefined,
 });
 
+/**
+ * Turns the guest's answers into a ready-to-paste Google review, so they never
+ * have to type the same thing twice. Google only accepts reviews posted by the
+ * guest from their own account, so we hand them the words rather than post.
+ */
+function composeReview(v: Values): string {
+  const labels = EXPERIENCE_OPTIONS.filter((o) => v.experienceCategories.includes(o.value)).map((o) =>
+    o.value === "overall" ? "the overall experience" : o.label.toLowerCase(),
+  );
+  const liked =
+    labels.length === 0
+      ? ""
+      : labels.length === 1
+        ? labels[0]!
+        : `${labels.slice(0, -1).join(", ")} and ${labels.at(-1)}`;
+
+  const parts: string[] = [];
+  const written = v.additionalFeedback.trim();
+  if (written) parts.push(written);
+  if (liked) parts.push(`I enjoyed the ${liked}.`);
+  if (!written && !liked) {
+    parts.push(v.rating >= 4 ? `Lovely visit to ${site.name}.` : `My visit to ${site.name}.`);
+  }
+  if (v.recommendation === "yes") parts.push(`Would definitely recommend ${site.shortName}!`);
+  return parts.join(" ");
+}
+
 function uuid(): string {
   const c: Crypto = globalThis.crypto;
   if (typeof c.randomUUID === "function") return c.randomUUID();
@@ -81,7 +108,11 @@ export function FeedbackForm() {
   const [serverErrors, setServerErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "submitting" | "success">("idle");
-  const [result, setResult] = useState<{ name: string; rating: number }>({ name: "", rating: 0 });
+  const [result, setResult] = useState<{ name: string; rating: number; review: string }>({
+    name: "",
+    rating: 0,
+    review: "",
+  });
 
   const startedAt = useRef(0);
   const submissionKey = useRef<string | null>(null);
@@ -178,7 +209,11 @@ export function FeedbackForm() {
         | null;
 
       if (response.ok && body?.ok) {
-        setResult({ name: parsed.data.customerName.split(" ")[0] ?? "", rating: parsed.data.rating });
+        setResult({
+          name: parsed.data.customerName.split(" ")[0] ?? "",
+          rating: parsed.data.rating,
+          review: composeReview(values),
+        });
         setStatus("success");
         submissionKey.current = null;
         requestAnimationFrame(() => container.current?.scrollIntoView({ block: "start", behavior: "smooth" }));
@@ -215,7 +250,7 @@ export function FeedbackForm() {
     <div ref={container} className="scroll-mt-28 rounded-[2rem] bg-white p-6 shadow-[0_40px_120px_-50px_rgb(61_42_31/0.45)] ring-1 ring-roast/[0.06] sm:p-10">
       <AnimatePresence mode="wait" initial={false}>
         {status === "success" ? (
-          <SuccessPanel key="success" name={result.name} rating={result.rating} onReset={reset} />
+          <SuccessPanel key="success" name={result.name} rating={result.rating} review={result.review} onReset={reset} />
         ) : (
           <motion.form
             key="form"
@@ -577,7 +612,17 @@ function FieldError({ id, message, className }: { id: string; message?: string; 
   );
 }
 
-function SuccessPanel({ name, rating, onReset }: { name: string; rating: number; onReset: () => void }) {
+function SuccessPanel({
+  name,
+  rating,
+  review,
+  onReset,
+}: {
+  name: string;
+  rating: number;
+  review: string;
+  onReset: () => void;
+}) {
   const delighted = rating >= 4;
   return (
     <motion.div
@@ -641,17 +686,8 @@ function SuccessPanel({ name, rating, onReset }: { name: string; rating: number;
             ? "We're delighted you enjoyed your visit. Your words mean the world to our team — we can't wait to pour your next cup."
             : "Thank you for being honest with us. Our team will read your feedback carefully and use it to make your next visit better."}
         </p>
-        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          {delighted && (
-            <a
-              href={site.googleProfileUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex h-12 items-center gap-2 rounded-full bg-roast px-6 text-sm font-semibold text-foam transition hover:bg-espresso"
-            >
-              Share it on Google too <ArrowUpRight className="size-4 text-gold" />
-            </a>
-          )}
+        <GoogleReviewShare rating={rating} initialText={review} />
+        <div className="mt-6 flex justify-center">
           <button
             type="button"
             onClick={onReset}
@@ -662,5 +698,77 @@ function SuccessPanel({ name, rating, onReset }: { name: string; rating: number;
         </div>
       </motion.div>
     </motion.div>
+  );
+}
+
+/** Copies text, falling back to a hidden textarea where the Clipboard API is unavailable (e.g. plain http on a LAN IP). */
+async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand("copy");
+    ta.remove();
+    return ok;
+  }
+}
+
+/**
+ * Shown to every guest regardless of rating — Google's policy forbids only
+ * inviting happy customers to review ("review gating").
+ */
+function GoogleReviewShare({ rating, initialText }: { rating: number; initialText: string }) {
+  const uid = useId();
+  const [text, setText] = useState(initialText);
+  const [copied, setCopied] = useState(false);
+  const href = googleReviewUrl();
+
+  // The link opens Google in a new tab on its own; we just put the words on the clipboard first.
+  function onShare() {
+    void copyText(text).then(setCopied);
+  }
+
+  return (
+    <div className="mx-auto mt-8 w-full max-w-md rounded-2xl bg-foam/70 p-5 text-left ring-1 ring-roast/[0.06]">
+      <label htmlFor={`${uid}-review`} className="block text-[0.95rem] font-semibold text-roast">
+        {rating >= 4 ? "Post the same on Google in one tap" : "Want to share this on Google too?"}
+      </label>
+      <p id={`${uid}-review-hint`} className="mt-1 text-xs leading-relaxed text-cocoa/75">
+        We&apos;ve written up your feedback below. You can edit it. Tap the button: we copy it and open Google. Pick
+        your {rating} {rating === 1 ? "star" : "stars"}, paste, and post.
+      </p>
+      <Textarea
+        id={`${uid}-review`}
+        rows={4}
+        value={text}
+        onChange={(e) => {
+          setText(e.target.value);
+          setCopied(false);
+        }}
+        aria-describedby={`${uid}-review-hint`}
+        className="mt-3 min-h-28 resize-y rounded-2xl border-roast/12 bg-white px-4 py-3 text-sm leading-relaxed text-roast focus-visible:border-caramel focus-visible:ring-4 focus-visible:ring-caramel/15"
+      />
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={onShare}
+        className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-roast px-6 text-sm font-semibold text-foam transition hover:bg-espresso"
+      >
+        {copied ? <Check className="size-4 text-gold" aria-hidden /> : <Copy className="size-4 text-gold" aria-hidden />}
+        {copied ? "Copied! Paste it on Google" : "Copy & post on Google"}
+        <ArrowUpRight className="size-4 text-gold" aria-hidden />
+      </a>
+      <p className="sr-only" aria-live="polite">
+        {copied ? "Review text copied to clipboard" : ""}
+      </p>
+    </div>
   );
 }

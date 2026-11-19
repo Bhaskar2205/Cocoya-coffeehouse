@@ -59,6 +59,23 @@ export const site = {
    */
   googleProfileUrl: "https://share.google/ESln9wFmyM6qYDGw9",
 
+  /**
+   * Google Place ID (looks like "ChIJ…"). When set, the feedback form's
+   * "Post on Google" button opens Google's review box directly instead of the
+   * profile page. Find it at
+   * https://developers.google.com/maps/documentation/places/web-service/place-id
+   * (search "Cocoya Coffee House") or in Google Business Profile →
+   * "Ask for reviews" (the ID is the part after `placeid=`).
+   */
+  googlePlaceId: null as string | null,
+
+  /**
+   * Google Maps "feature ID" for the café, taken from the owner-supplied
+   * Google Search link (`#lrd=<this>,1`). Used to open the "Write a review"
+   * box directly when no Place ID is set. Confirmed 19 Nov 2026.
+   */
+  googleFeatureId: "0x396db7b61dcc9607:0xa08b097974351055" as string | null,
+
   /** Path to a logo file in /public (SVG or PNG). `null` = typographic wordmark. */
   logo: null as string | null,
 
@@ -121,6 +138,21 @@ export function directionsUrl(): string {
   if (l.geo) return `https://www.google.com/maps/dir/?api=1&destination=${l.geo.lat},${l.geo.lng}`;
   const address = formattedAddress();
   if (address) return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${site.name}, ${address}`)}`;
+  return site.googleProfileUrl;
+}
+
+/**
+ * Where guests leave a Google review. Opens Google's "Write a review" box
+ * directly when `googlePlaceId` is set; otherwise falls back to the profile.
+ */
+export function googleReviewUrl(): string {
+  if (site.googlePlaceId) {
+    return `https://search.google.com/local/writereview?placeid=${encodeURIComponent(site.googlePlaceId)}`;
+  }
+  if (site.googleFeatureId) {
+    // `,3` opens Google's "Write a review" dialog on the business panel (`,1` only lists reviews).
+    return `https://www.google.com/search?q=${encodeURIComponent(site.name)}#lrd=${site.googleFeatureId},3,,,,`;
+  }
   return site.googleProfileUrl;
 }
 
