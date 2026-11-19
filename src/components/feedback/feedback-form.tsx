@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { useRouter } from "next/navigation";
 import { AlertCircle, ArrowUpRight, Check, ChevronDown, Copy, Loader2, RotateCcw } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -103,6 +104,7 @@ const inputClass =
 
 export function FeedbackForm() {
   const uid = useId();
+  const router = useRouter();
   const [values, setValues] = useState<Values>(INITIAL);
   const [attempted, setAttempted] = useState(false);
   const [serverErrors, setServerErrors] = useState<FieldErrors>({});
@@ -216,6 +218,8 @@ export function FeedbackForm() {
         });
         setStatus("success");
         submissionKey.current = null;
+        // Re-fetch server components so a just-published comment appears above the form.
+        if (parsed.data.displayConsent && parsed.data.additionalFeedback) router.refresh();
         requestAnimationFrame(() => container.current?.scrollIntoView({ block: "start", behavior: "smooth" }));
         return;
       }
@@ -521,8 +525,8 @@ export function FeedbackForm() {
                   className="mt-0.5 size-5 rounded-md border-roast/30 bg-white data-checked:border-roast data-checked:bg-roast data-checked:text-foam"
                 />
                 <label htmlFor={ids.display} className="cursor-pointer text-sm leading-relaxed text-cocoa/80">
-                  <span className="font-medium text-cocoa">Optional:</span> you may feature my comments on the Cocoya
-                  website (first name and last initial only, never my number).
+                  <span className="font-medium text-cocoa">Optional:</span> show my comment on the Cocoya website (first
+                  name and last initial only, never my number).
                 </label>
               </div>
             </div>

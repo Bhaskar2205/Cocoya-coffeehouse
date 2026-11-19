@@ -10,6 +10,8 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { rateLimit } from "@/lib/rate-limit";
 import { clientIp, hashIp, isSameOrigin } from "@/lib/security";
 import { notifyNewFeedback } from "@/lib/notify";
+import { revalidateTag } from "next/cache";
+import { FEATURED_FEEDBACK_TAG } from "@/lib/featured-feedback";
 
 const MAX_BODY_BYTES = 8 * 1024;
 const IP_LIMIT_PER_HOUR = 6;
@@ -115,6 +117,9 @@ export async function POST(request: Request) {
   }
 
   // 8 ─ Insert (idempotent thanks to the unique submission_key).
+  // Guests who opted in to being featured AND wrote a comment go live on the
+  // website straight away; the owner can hide any of them in /admin/reviews.
+  const publishNow = data.displayConsent && !!data.additionalFeedback;
   const { data: inserted, error } = await supabase
     .from("customer_reviews")
     .insert({
@@ -127,6 +132,7 @@ export async function POST(request: Request) {
       recommendation: data.recommendation,
       privacy_consent: data.privacyConsent,
       display_consent: data.displayConsent,
+      is_featured: publishNow,
       submission_key: envelope.data.submissionKey,
       ip_hash: ipHash,
       user_agent: request.headers.get("user-agent")?.slice(0, 400) ?? null,
@@ -142,6 +148,9 @@ export async function POST(request: Request) {
     console.error("[feedback] insert failed:", error.code, error.message);
     return json({ ok: false, error: "Something went wrong while saving your feedback. Please try again." }, 500);
   }
+
+  // Show it to the very next visitor (no stale copy).
+  if (publishNow) revalidateTag(FEATURED_FEEDBACK_TAG, { expire: 0 });
 
   // 9 ─ Notify the owner after the response is sent (never blocks the guest).
   after(() => notifyNewFeedback(inserted.id, data));

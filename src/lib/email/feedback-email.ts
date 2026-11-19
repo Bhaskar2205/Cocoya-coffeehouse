@@ -132,7 +132,12 @@ export function buildFeedbackEmail({ id, data, submittedAt }: FeedbackEmailInput
           ${row("Enjoyed", chips)}
           ${row("Would recommend", `<strong>${escapeHtml(recommend)}</strong>`)}
           ${row("Comment", comment ? "See above" : `<span style="color:${C.cocoa}">No written comment</span>`)}
-          ${row("Show on website", data.displayConsent ? "Yes, allowed" : `<span style="color:${C.cocoa}">No</span>`)}
+          ${row(
+            "On website",
+            data.displayConsent && comment
+              ? `Live now <span style="color:${C.cocoa}">(hide it from the dashboard)</span>`
+              : `<span style="color:${C.cocoa}">Private, not shown</span>`,
+          )}
           ${row("Submitted", `${escapeHtml(when)} IST`)}
         </table>
       </td></tr>
@@ -160,7 +165,7 @@ export function buildFeedbackEmail({ id, data, submittedAt }: FeedbackEmailInput
     `Mobile:          ${phoneDisplay}`,
     `Enjoyed:         ${enjoyed.join(", ") || "Not selected"}`,
     `Would recommend: ${recommend}`,
-    `Show on website: ${data.displayConsent ? "Yes" : "No"}`,
+    `On website:      ${data.displayConsent && comment ? "Live now (hide it from the dashboard)" : "Private, not shown"}`,
     `Submitted:       ${when} IST`,
     `Reference:       #${ref}`,
     ``,

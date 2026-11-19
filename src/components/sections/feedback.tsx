@@ -3,6 +3,7 @@ import { SectionHeading } from "@/components/section-heading";
 import { ImageReveal, Reveal } from "@/components/motion/reveal";
 import { Photo } from "@/components/ui/photo";
 import { LazyFeedbackForm } from "@/components/feedback/lazy-feedback-form";
+import { RecentFeedback } from "@/components/feedback/recent-feedback";
 import { feedbackCopy } from "@/content/copy";
 
 const promises = [
@@ -51,6 +52,7 @@ export function Feedback() {
         </div>
 
         <Reveal delay={0.1} y={40} className="lg:col-span-7">
+          <RecentFeedback />
           <LazyFeedbackForm />
         </Reveal>
       </div>
